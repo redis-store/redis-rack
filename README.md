@@ -27,6 +27,7 @@ use Rack::Session::Redis
 gem install bundler
 git clone git://github.com/redis-store/redis-rack.git
 cd redis-rack
+git checkout -t origin/1.4.x
 bundle install
 bundle exec rake
 ```
@@ -35,7 +36,7 @@ If you are on **Snow Leopard** you have to run `env ARCHFLAGS="-arch x86_64" bun
 
 ## Status
 
-[![Gem Version](https://badge.fury.io/rb/redis-rack.png)](http://badge.fury.io/rb/redis-rack) [![Build Status](https://secure.travis-ci.org/redis-store/redis-rack.png?branch=master)](http://travis-ci.org/jodosha/redis-rack?branch=master) [![Code Climate](https://codeclimate.com/github/jodosha/redis-store.png)](https://codeclimate.com/github/redis-store/redis-rack)
+[![Build Status](https://secure.travis-ci.org/redis-store/redis-rack.png?branch=1.4.x)](http://travis-ci.org/jodosha/redis-rack?branch=1.4.x)
 
 ## Copyright
 

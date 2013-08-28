@@ -1,6 +1,6 @@
 class Redis
   module Rack
-    VERSION = '1.5.0'
+    VERSION = '1.4.3'
   end
 end
 
