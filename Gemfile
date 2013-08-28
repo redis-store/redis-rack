@@ -1,4 +1,6 @@
 source 'https://rubygems.org'
 gemspec
 
-gem 'redis-store', '~> 1.1.0', path: '../redis-store'
+if ::File.directory?(gem_path = '../redis-store')
+  gem 'redis-store', '~> 1.1.0', path: gem_path
+end
