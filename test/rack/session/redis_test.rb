@@ -36,6 +36,13 @@ describe Rack::Session::Redis do
   #   }.must_raise(Exception)
   # end
 
+  it "uses the specified Redis store when provided" do
+    store = ::Redis::Store::Factory.create('redis://127.0.0.1:6380/1')
+    pool = Rack::Session::Redis.new(incrementor, :redis_store => store)
+    pool.pool.to_s.must_match(/127\.0\.0\.1:6380 against DB 1$/)
+    pool.pool.must_equal(store)
+  end
+
   it "uses the default Redis server and namespace when not provided" do
     pool = Rack::Session::Redis.new(incrementor)
     pool.pool.to_s.must_match(/127\.0\.0\.1:6379 against DB 0 with namespace rack:session$/)

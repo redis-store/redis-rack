@@ -14,7 +14,9 @@ module Rack
         super
 
         @mutex = Mutex.new
-        @pool = ::Redis::Store::Factory.create @default_options[:redis_server]
+        @pool = @default_options.has_key?(:redis_store) ?
+          @default_options[:redis_store] :
+          ::Redis::Store::Factory.create(@default_options[:redis_server])
       end
 
       def generate_unique_sid(session)
