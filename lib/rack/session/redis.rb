@@ -14,15 +14,31 @@ module Rack
         super
 
         @mutex = Mutex.new
-        @pool = @default_options.has_key?(:redis_store) ?
-          @default_options[:redis_store] :
-          ::Redis::Store::Factory.create(@default_options[:redis_server])
+        @pool = if @default_options[:pool]
+                 raise "pool must be an instance of ConnectionPool" unless @default_options[:pool].is_a?(ConnectionPool)
+                  @pooled = true
+                  @default_options[:pool]
+                elsif [:pool_size, :pool_timeout].any? { |key| @default_options.has_key?(key) }
+                  pool_options           = {}
+                  pool_options[:size]    = options[:pool_size] if options[:pool_size]
+                  pool_options[:timeout] = options[:pool_timeout] if options[:pool_timeout]
+                  @pooled = true
+                  ::ConnectionPool.new(pool_options) { ::Redis::Store::Factory.create(@default_options[:redis_server]) } 
+                else
+                  @default_options.has_key?(:redis_store) ? 
+                    @default_options[:redis_store] :
+                    ::Redis::Store::Factory.create(@default_options[:redis_server])
+
+                end
       end
 
       def generate_unique_sid(session)
         loop do
           sid = generate_sid
-          break sid if [1, true].include?([*@pool.setnx(sid, session, @default_options)].first)
+          first = with do |c|
+            [*c.setnx(sid, session, @default_options)].first
+          end
+          break sid if [1, true].include?(first)
         end
       end
 
@@ -31,7 +47,7 @@ module Rack
           [generate_sid, {}]
         else
           with_lock(env, [nil, {}]) do
-            unless sid and session = @pool.get(sid)
+            unless sid and session = with { |c| c.get(sid) }
               session = {}
               sid = generate_unique_sid(session)
             end
@@ -42,14 +58,14 @@ module Rack
 
       def set_session(env, session_id, new_session, options)
         with_lock(env, false) do
-          @pool.set session_id, new_session, options
+          with { |c| c.set session_id, new_session, options }
           session_id
         end
       end
 
       def destroy_session(env, session_id, options)
         with_lock(env) do
-          @pool.del(session_id)
+          with { |c| c.del(session_id) }
           generate_sid unless options[:drop]
         end
       end
@@ -65,6 +81,14 @@ module Rack
         default
       ensure
         @mutex.unlock if @mutex.locked?
+      end
+
+      def with(&block)
+        if @pooled
+          @pool.with(&block)
+        else
+          block.call(@pool)
+        end
       end
 
     end
