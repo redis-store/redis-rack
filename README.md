@@ -1,16 +1,35 @@
-# Redis stores for Rack
+# Redis session store for Rack
 
-## New maintainer required
+__`redis-rack`__ provides a Redis-backed session store for __Rack__.
 
-**I am currently looking for a new maintainer for this gem. I am no longer doing any more work on this myself. Please contact me@ryanbigg.com if you'd like to take over this project.**
+See the main [redis-store readme] for general guidelines.
 
-__`redis-rack`__ provides a Redis backed session store __Rack__. See the main [redis-store readme](https://github.com/redis-store/redis-store) for general guidelines.
+**NOTE:** This is not [redis-rack-cache][], the library for using Redis
+as a backend store for the `Rack::Cache` HTTP cache. All this gem does
+is store the Rack session within Redis.
+
+[![Build Status](https://secure.travis-ci.org/redis-store/redis-rack.png?branch=master)](http://travis-ci.org/jodosha/redis-rack?branch=master)
+[![Code Climate](https://codeclimate.com/github/jodosha/redis-store.png)](https://codeclimate.com/github/redis-store/redis-rack)
+[![Gem Version](https://badge.fury.io/rb/redis-rack.png)](http://badge.fury.io/rb/redis-rack)
 
 ## Installation
 
+Install with Bundler by adding the following to Gemfile:
+
 ```ruby
-# Gemfile
 gem 'redis-rack'
+```
+
+Then, run:
+
+```
+bundle install
+```
+
+Or, you can install it manually using RubyGems:
+
+```
+gem install redis-rack
 ```
 
 ## Usage
@@ -25,22 +44,35 @@ require 'rack/session/redis'
 use Rack::Session::Redis
 ```
 
-## Running tests
+## Development
+
+To install this gem for development purposes:
 
 ```shell
-gem install bundler
+gem install bundler # note: you don't need to do this if you already have it installed
 git clone git://github.com/redis-store/redis-rack.git
 cd redis-rack
 bundle install
+```
+
+## Running tests
+
+To run tests:
+
+```shell
 bundle exec rake
 ```
 
-If you are on **Snow Leopard** you have to run `env ARCHFLAGS="-arch x86_64" bundle exec rake`
+If you are on **Snow Leopard** you have to run the following command to
+build this software:
 
-## Status
-
-[![Gem Version](https://badge.fury.io/rb/redis-rack.png)](http://badge.fury.io/rb/redis-rack) [![Build Status](https://secure.travis-ci.org/redis-store/redis-rack.png?branch=master)](http://travis-ci.org/jodosha/redis-rack?branch=master) [![Code Climate](https://codeclimate.com/github/jodosha/redis-store.png)](https://codeclimate.com/github/redis-store/redis-rack)
+```shell
+env ARCHFLAGS="-arch x86_64" bundle exec rake
+```
 
 ## Copyright
 
 2009 - 2013 Luca Guidi - [http://lucaguidi.com](http://lucaguidi.com), released under the MIT license
+
+[redis-rack-cache]: https://github.com/redis-store/redis-rack-cache
+[redis-store readme]: https://github.com/redis-store/redis-store
