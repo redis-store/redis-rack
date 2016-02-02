@@ -22,14 +22,14 @@ gem 'redis-rack'
 
 Then, run:
 
-```
-bundle install
+```shell
+$ bundle install
 ```
 
 Or, you can install it manually using RubyGems:
 
-```
-gem install redis-rack
+```shell
+$ gem install redis-rack
 ```
 
 ## Usage
@@ -49,10 +49,10 @@ use Rack::Session::Redis
 To install this gem for development purposes:
 
 ```shell
-gem install bundler # note: you don't need to do this if you already have it installed
-git clone git://github.com/redis-store/redis-rack.git
-cd redis-rack
-bundle install
+$ gem install bundler # note: you don't need to do this if you already have it installed
+$ git clone git://github.com/redis-store/redis-rack.git
+$ cd redis-rack
+$ bundle install
 ```
 
 ## Running tests
@@ -60,14 +60,14 @@ bundle install
 To run tests:
 
 ```shell
-bundle exec rake
+$ bundle exec rake
 ```
 
 If you are on **Snow Leopard** you have to run the following command to
 build this software:
 
 ```shell
-env ARCHFLAGS="-arch x86_64" bundle exec rake
+$ env ARCHFLAGS="-arch x86_64" bundle exec rake
 ```
 
 ## Copyright
