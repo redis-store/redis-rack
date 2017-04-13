@@ -10,3 +10,7 @@ matrix:
   allow_failures:
     - rvm: jruby-head
     - rvm: ruby-head
+# Put this in your .travis.yml
+gemfile:
+  - gemfiles/rack_2.gemfile
+  - gemfiles/rack_1.gemfile
