@@ -348,22 +348,18 @@ describe Rack::Session::Redis do
   end
 
   describe "on a connection failure" do
-    it "#get_session returns the default" do
+    it "#get_session returns the default when Redis::CannotConnectError is raised" do
       redis_store = Rack::Session::Redis.new("redis://127.0.0.1:6380/1")
       redis_store.stubs(:with).raises(::Redis::CannotConnectError)
       env = {'rack.session.options' => {} }
       redis_store.get_session(env, 'sid').must_equal([nil, {}])
     end
-  end
 
-  describe "on a connection failure with raise_errors: true" do
-    it "#get_session raises the error" do
-      redis_store = Rack::Session::Redis.new("redis://127.0.0.1:6380/1", raise_errors: true)
-      redis_store.stubs(:with).raises(::Redis::CannotConnectError)
+    it "#get_session returns the default when Errno::ECONNREFUSED is raised" do
+      redis_store = Rack::Session::Redis.new("redis://127.0.0.1:6380/1")
+      redis_store.stubs(:with).raises(Errno::ECONNREFUSED)
       env = {'rack.session.options' => {} }
-      assert_raises(::Redis::CannotConnectError) do
-        redis_store.get_session(env, 'sid')
-      end
+      redis_store.get_session(env, 'sid').must_equal([nil, {}])
     end
   end
 

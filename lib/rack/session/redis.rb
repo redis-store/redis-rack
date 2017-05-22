@@ -14,7 +14,6 @@ module Rack
         super
 
         @mutex = Mutex.new
-        @raise_errors = options[:raise_errors] || false
         @pool = if @default_options[:pool]
                   raise "pool must be an instance of ConnectionPool" unless @default_options[:pool].is_a?(ConnectionPool)
                   @pooled = true
@@ -79,7 +78,6 @@ module Rack
           warn "#{self} is unable to find Redis server."
           warn $!.inspect
         end
-        raise if raise_errors?
         default
       ensure
         @mutex.unlock if @mutex.locked?
