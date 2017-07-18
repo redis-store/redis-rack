@@ -28,14 +28,11 @@ describe Rack::Session::Redis do
     incrementor.call(env)
   end
 
-  # # test Redis connection
-  # Rack::Session::Redis.new(incrementor)
-  #
-  # it "faults on no connection" do
-  #   lambda{
-  #     Rack::Session::Redis.new(incrementor, :redis_server => 'nosuchserver')
-  #   }.must_raise(Exception)
-  # end
+  it "gracefully handles connection errors" do
+    store = Rack::Session::Redis.new(incrementor, :redis_server => 'nosuchserver')
+    env = { 'rack.multithread' => false }
+    assert_equal 'foo', store.set_session(env, 'foo', 'bar', {})
+  end
 
   it "can create it's own pool" do
     session_store = Rack::Session::Redis.new(incrementor, pool_size: 5, pool_timeout: 10)
