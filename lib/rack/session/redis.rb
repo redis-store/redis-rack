@@ -1,42 +1,29 @@
 require 'rack/session/abstract/id'
 require 'redis-store'
 require 'thread'
+require 'redis/rack/connection'
 
 module Rack
   module Session
     class Redis < Abstract::ID
-      attr_reader :mutex, :pool
+      attr_reader :mutex
 
-      DEFAULT_OPTIONS = Abstract::ID::DEFAULT_OPTIONS.merge \
+      DEFAULT_OPTIONS = Abstract::ID::DEFAULT_OPTIONS.merge(
         :redis_server => 'redis://127.0.0.1:6379/0/rack:session'
+      )
 
       def initialize(app, options = {})
         super
 
         @mutex = Mutex.new
-        @pool = if @default_options[:pool]
-                 raise "pool must be an instance of ConnectionPool" unless @default_options[:pool].is_a?(ConnectionPool)
-                  @pooled = true
-                  @default_options[:pool]
-                elsif [:pool_size, :pool_timeout].any? { |key| @default_options.has_key?(key) }
-                  pool_options           = {}
-                  pool_options[:size]    = options[:pool_size] if options[:pool_size]
-                  pool_options[:timeout] = options[:pool_timeout] if options[:pool_timeout]
-                  @pooled = true
-                  ::ConnectionPool.new(pool_options) { ::Redis::Store::Factory.create(@default_options[:redis_server]) }
-                else
-                  @default_options.has_key?(:redis_store) ?
-                    @default_options[:redis_store] :
-                    ::Redis::Store::Factory.create(@default_options[:redis_server])
-
-                end
+        @conn = ::Redis::Rack::Connection.new(@default_options)
       end
 
       def generate_unique_sid(session)
         loop do
           sid = generate_sid
           first = with do |c|
-            [*c.setnx(sid, session, @default_options)].first
+            [*c.setnx(sid, session, @config)].first
           end
           break sid if [1, true].include?(first)
         end
@@ -88,13 +75,8 @@ module Rack
       end
 
       def with(&block)
-        if @pooled
-          @pool.with(&block)
-        else
-          block.call(@pool)
-        end
+        @conn.with(&block)
       end
-
     end
   end
 end
