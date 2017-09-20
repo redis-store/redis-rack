@@ -3,6 +3,24 @@ require 'rack/mock'
 require 'thread'
 require 'connection_pool'
 
+class MockMutex
+  attr_reader :was_locked
+
+  def initialize
+    @was_locked = false
+  end
+
+  def lock
+    @was_locked = true
+  end
+
+  def unlock
+  end
+
+  def locked?
+  end
+end
+
 describe Rack::Session::Redis do
   session_key = Rack::Session::Redis::DEFAULT_OPTIONS[:key]
   session_match = /#{session_key}=([0-9a-fA-F]+);/
@@ -53,7 +71,6 @@ describe Rack::Session::Redis do
     session_store.with { |connection| connection.to_s.must_match(/127\.0\.0\.1:6380 against DB 1$/)  }
   end
 
-
   it "can use a supplied pool" do
     session_store = Rack::Session::Redis.new(incrementor, pool: ::ConnectionPool.new(size: 1, timeout: 1) { ::Redis::Store::Factory.create("redis://127.0.0.1:6380/1")})
     session_store.pool.class.must_equal ::ConnectionPool
@@ -80,6 +97,38 @@ describe Rack::Session::Redis do
   it "uses the specified Redis server when provided" do
     pool = Rack::Session::Redis.new(incrementor, :redis_server => 'redis://127.0.0.1:6380/1')
     pool.pool.to_s.must_match(/127\.0\.0\.1:6380 against DB 1$/)
+  end
+
+  it "uses a global lock by default" do
+    sesion_store = Rack::Session::Redis.new(incrementor)
+    sesion_store.use_global_lock?.must_equal(true)
+  end
+
+  it "locks the store mutex" do
+    mutex = MockMutex.new
+    sesion_store = Rack::Session::Redis.new(incrementor)
+    sesion_store.instance_variable_set(:@mutex, mutex)
+    was_yielded = false
+    sesion_store.with_lock({'rack.multithread' => true}) { was_yielded = true}
+    mutex.was_locked.must_equal(true)
+    was_yielded.must_equal(true)
+  end
+
+  describe "global lock disabled" do
+    it "can have the global lock disabled" do
+      sesion_store = Rack::Session::Redis.new(incrementor, :use_global_lock => false)
+      sesion_store.use_global_lock?.must_equal(false)
+    end
+
+    it "does not lock the store mutex" do
+      mutex = MockMutex.new
+      sesion_store = Rack::Session::Redis.new(incrementor, :use_global_lock => false)
+      sesion_store.instance_variable_set(:@mutex, mutex)
+      was_yielded = false
+      sesion_store.with_lock({'rack.multithread' => true}) { was_yielded = true}
+      mutex.was_locked.must_equal(false)
+      was_yielded.must_equal(true)
+    end
   end
 
   it "creates a new cookie" do
