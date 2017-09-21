@@ -3,24 +3,6 @@ require 'rack/mock'
 require 'thread'
 require 'connection_pool'
 
-class MockMutex
-  attr_reader :was_locked
-
-  def initialize
-    @was_locked = false
-  end
-
-  def lock
-    @was_locked = true
-  end
-
-  def unlock
-  end
-
-  def locked?
-  end
-end
-
 describe Rack::Session::Redis do
   session_key = Rack::Session::Redis::DEFAULT_OPTIONS[:key]
   session_match = /#{session_key}=([0-9a-fA-F]+);/
@@ -105,12 +87,12 @@ describe Rack::Session::Redis do
   end
 
   it "locks the store mutex" do
-    mutex = MockMutex.new
+    mutex = Mutex.new
+    mutex.expects(:lock).once
     sesion_store = Rack::Session::Redis.new(incrementor)
     sesion_store.instance_variable_set(:@mutex, mutex)
     was_yielded = false
     sesion_store.with_lock({'rack.multithread' => true}) { was_yielded = true}
-    mutex.was_locked.must_equal(true)
     was_yielded.must_equal(true)
   end
 
@@ -121,12 +103,12 @@ describe Rack::Session::Redis do
     end
 
     it "does not lock the store mutex" do
-      mutex = MockMutex.new
+      mutex = Mutex.new
+      mutex.expects(:lock).never
       sesion_store = Rack::Session::Redis.new(incrementor, :use_global_lock => false)
       sesion_store.instance_variable_set(:@mutex, mutex)
       was_yielded = false
       sesion_store.with_lock({'rack.multithread' => true}) { was_yielded = true}
-      mutex.was_locked.must_equal(false)
       was_yielded.must_equal(true)
     end
   end
