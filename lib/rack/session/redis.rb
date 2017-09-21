@@ -23,9 +23,9 @@ module Rack
                   pool_options[:size]    = options[:pool_size] if options[:pool_size]
                   pool_options[:timeout] = options[:pool_timeout] if options[:pool_timeout]
                   @pooled = true
-                  ::ConnectionPool.new(pool_options) { ::Redis::Store::Factory.create(@default_options[:redis_server]) } 
+                  ::ConnectionPool.new(pool_options) { ::Redis::Store::Factory.create(@default_options[:redis_server]) }
                 else
-                  @default_options.has_key?(:redis_store) ? 
+                  @default_options.has_key?(:redis_store) ?
                     @default_options[:redis_store] :
                     ::Redis::Store::Factory.create(@default_options[:redis_server])
 
@@ -70,8 +70,12 @@ module Rack
         end
       end
 
+      def threadsafe?
+        @default_options.fetch(:threadsafe, true)
+      end
+
       def with_lock(env, default=nil)
-        @mutex.lock if env['rack.multithread']
+        @mutex.lock if env['rack.multithread'] && threadsafe?
         yield
       rescue Errno::ECONNREFUSED
         if $VERBOSE
@@ -94,4 +98,3 @@ module Rack
     end
   end
 end
-

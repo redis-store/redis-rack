@@ -53,7 +53,6 @@ describe Rack::Session::Redis do
     session_store.with { |connection| connection.to_s.must_match(/127\.0\.0\.1:6380 against DB 1$/)  }
   end
 
-
   it "can use a supplied pool" do
     session_store = Rack::Session::Redis.new(incrementor, pool: ::ConnectionPool.new(size: 1, timeout: 1) { ::Redis::Store::Factory.create("redis://127.0.0.1:6380/1")})
     session_store.pool.class.must_equal ::ConnectionPool
@@ -80,6 +79,38 @@ describe Rack::Session::Redis do
   it "uses the specified Redis server when provided" do
     pool = Rack::Session::Redis.new(incrementor, :redis_server => 'redis://127.0.0.1:6380/1')
     pool.pool.to_s.must_match(/127\.0\.0\.1:6380 against DB 1$/)
+  end
+
+  it "is threadsafe by default" do
+    sesion_store = Rack::Session::Redis.new(incrementor)
+    sesion_store.threadsafe?.must_equal(true)
+  end
+
+  it "locks the store mutex" do
+    mutex = Mutex.new
+    mutex.expects(:lock).once
+    sesion_store = Rack::Session::Redis.new(incrementor)
+    sesion_store.instance_variable_set(:@mutex, mutex)
+    was_yielded = false
+    sesion_store.with_lock({'rack.multithread' => true}) { was_yielded = true}
+    was_yielded.must_equal(true)
+  end
+
+  describe "threadsafe disabled" do
+    it "can have the global lock disabled" do
+      sesion_store = Rack::Session::Redis.new(incrementor, :threadsafe => false)
+      sesion_store.threadsafe?.must_equal(false)
+    end
+
+    it "does not lock the store mutex" do
+      mutex = Mutex.new
+      mutex.expects(:lock).never
+      sesion_store = Rack::Session::Redis.new(incrementor, :threadsafe => false)
+      sesion_store.instance_variable_set(:@mutex, mutex)
+      was_yielded = false
+      sesion_store.with_lock({'rack.multithread' => true}) { was_yielded = true}
+      was_yielded.must_equal(true)
+    end
   end
 
   it "creates a new cookie" do
