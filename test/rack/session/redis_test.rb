@@ -81,9 +81,9 @@ describe Rack::Session::Redis do
     pool.pool.to_s.must_match(/127\.0\.0\.1:6380 against DB 1$/)
   end
 
-  it "uses a global lock by default" do
+  it "is threadsafe by default" do
     sesion_store = Rack::Session::Redis.new(incrementor)
-    sesion_store.use_global_lock?.must_equal(true)
+    sesion_store.threadsafe?.must_equal(true)
   end
 
   it "locks the store mutex" do
@@ -96,16 +96,16 @@ describe Rack::Session::Redis do
     was_yielded.must_equal(true)
   end
 
-  describe "global lock disabled" do
+  describe "threadsafe disabled" do
     it "can have the global lock disabled" do
-      sesion_store = Rack::Session::Redis.new(incrementor, :use_global_lock => false)
-      sesion_store.use_global_lock?.must_equal(false)
+      sesion_store = Rack::Session::Redis.new(incrementor, :threadsafe => false)
+      sesion_store.threadsafe?.must_equal(false)
     end
 
     it "does not lock the store mutex" do
       mutex = Mutex.new
       mutex.expects(:lock).never
-      sesion_store = Rack::Session::Redis.new(incrementor, :use_global_lock => false)
+      sesion_store = Rack::Session::Redis.new(incrementor, :threadsafe => false)
       sesion_store.instance_variable_set(:@mutex, mutex)
       was_yielded = false
       sesion_store.with_lock({'rack.multithread' => true}) { was_yielded = true}

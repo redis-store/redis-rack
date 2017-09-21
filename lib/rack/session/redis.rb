@@ -70,12 +70,12 @@ module Rack
         end
       end
 
-      def use_global_lock?
-        @default_options.fetch(:use_global_lock, true)
+      def threadsafe?
+        @default_options.fetch(:threadsafe, true)
       end
 
       def with_lock(env, default=nil)
-        @mutex.lock if env['rack.multithread'] && use_global_lock?
+        @mutex.lock if env['rack.multithread'] && threadsafe?
         yield
       rescue Errno::ECONNREFUSED
         if $VERBOSE
