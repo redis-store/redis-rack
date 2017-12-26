@@ -15,7 +15,7 @@ module Rack
 
         @mutex = Mutex.new
         @pool = if @default_options[:pool]
-                 raise "pool must be an instance of ConnectionPool" unless @default_options[:pool].is_a?(ConnectionPool)
+                  raise "pool must be an instance of ConnectionPool" unless @default_options[:pool].is_a?(ConnectionPool)
                   @pooled = true
                   @default_options[:pool]
                 elsif [:pool_size, :pool_timeout].any? { |key| @default_options.has_key?(key) }
@@ -77,7 +77,7 @@ module Rack
       def with_lock(env, default=nil)
         @mutex.lock if env['rack.multithread'] && threadsafe?
         yield
-      rescue Errno::ECONNREFUSED
+      rescue Errno::ECONNREFUSED, ::Redis::CannotConnectError
         if $VERBOSE
           warn "#{self} is unable to find Redis server."
           warn $!.inspect
@@ -95,6 +95,9 @@ module Rack
         end
       end
 
+      def raise_errors?
+        @raise_errors
+      end
     end
   end
 end
