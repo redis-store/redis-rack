@@ -88,13 +88,8 @@ module Rack
       end
 
       def with(&block)
-        if @pooled
-          @pool.with(&block)
-        else
-          block.call(@pool)
-        end
+        @pool.with(&block)
       end
-
     end
   end
 end
