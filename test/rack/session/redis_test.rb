@@ -39,8 +39,9 @@ describe Rack::Session::Redis do
 
   it "can create it's own pool" do
     session_store = Rack::Session::Redis.new(incrementor, pool_size: 5, pool_timeout: 10)
-    session_store.pool.class.must_equal ::ConnectionPool
-    session_store.pool.instance_variable_get(:@size).must_equal 5
+    conn = session_store.instance_variable_get(:@conn)
+    conn.pool.class.must_equal ::ConnectionPool
+    conn.pool.instance_variable_get(:@size).must_equal 5
   end
 
   it "can create it's own pool using default Redis server" do
@@ -55,30 +56,33 @@ describe Rack::Session::Redis do
 
   it "can use a supplied pool" do
     session_store = Rack::Session::Redis.new(incrementor, pool: ::ConnectionPool.new(size: 1, timeout: 1) { ::Redis::Store::Factory.create("redis://127.0.0.1:6380/1")})
-    session_store.pool.class.must_equal ::ConnectionPool
-    session_store.pool.instance_variable_get(:@size).must_equal 1
+    conn = session_store.instance_variable_get(:@conn)
+    conn.pool.class.must_equal ::ConnectionPool
+    conn.pool.instance_variable_get(:@size).must_equal 1
   end
 
   it "uses the specified Redis store when provided" do
     store = ::Redis::Store::Factory.create('redis://127.0.0.1:6380/1')
     pool = Rack::Session::Redis.new(incrementor, :redis_store => store)
-    pool.pool.to_s.must_match(/127\.0\.0\.1:6380 against DB 1$/)
-    pool.pool.must_equal(store)
+    pool.with do |p|
+      p.to_s.must_match(/127\.0\.0\.1:6380 against DB 1$/)
+      p.must_equal(store)
+    end
   end
 
   it "uses the default Redis server and namespace when not provided" do
     pool = Rack::Session::Redis.new(incrementor)
-    pool.pool.to_s.must_match(/127\.0\.0\.1:6379 against DB 0 with namespace rack:session$/)
+    pool.with { |p| p.to_s.must_match(/127\.0\.0\.1:6379 against DB 0 with namespace rack:session$/) }
   end
 
   it "uses the specified namespace when provided" do
     pool = Rack::Session::Redis.new(incrementor, :redis_server => {:namespace => 'test:rack:session'})
-    pool.pool.to_s.must_match(/namespace test:rack:session$/)
+    pool.with { |p| p.to_s.must_match(/namespace test:rack:session$/) }
   end
 
   it "uses the specified Redis server when provided" do
     pool = Rack::Session::Redis.new(incrementor, :redis_server => 'redis://127.0.0.1:6380/1')
-    pool.pool.to_s.must_match(/127\.0\.0\.1:6380 against DB 1$/)
+    pool.with { |p| p.to_s.must_match(/127\.0\.0\.1:6380 against DB 1$/) }
   end
 
   it "is threadsafe by default" do
@@ -260,15 +264,12 @@ describe Rack::Session::Redis do
   end
 
   it "does not hit with :skip option" do
-    with_pool_management(incrementor) do |pool|
-      skip = Rack::Utils::Context.new(pool, skip_session)
+    with_pool_management(incrementor) do |session_store|
+      skip = Rack::Utils::Context.new(session_store, skip_session)
       sreq = Rack::MockRequest.new(skip)
-
-      pool.instance_variable_set('@pool', MiniTest::Mock.new)
 
       res0 = sreq.get("/")
       res0.body.must_equal('{"counter"=>1}')
-      assert pool.pool.verify
     end
   end
 
