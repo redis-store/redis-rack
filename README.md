@@ -42,6 +42,11 @@ require 'rack'
 require 'rack/session/redis'
 
 use Rack::Session::Redis
+
+# Alternatively you can specify options to use:
+use Rack::Session::Redis,
+  :redis_server => "redis://redis:6379/0",
+  :expires_in => 3600 # Seconds. If you are using ActiveSupport you can use 1.hour
 ```
 
 ## Development
