@@ -20,6 +20,7 @@ module Rack
       end
 
       def generate_unique_sid(session)
+        return generate_sid if session.empty?
         loop do
           sid = generate_sid
           first = with do |c|

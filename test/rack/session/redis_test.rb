@@ -90,6 +90,12 @@ describe Rack::Session::Redis do
     sesion_store.threadsafe?.must_equal(true)
   end
 
+  it "does not store a blank session" do
+    session_store = Rack::Session::Redis.new(incrementor)
+    sid = session_store.generate_unique_sid({})
+    session_store.with { |c| c.get(sid).must_be_nil }
+  end
+
   it "locks the store mutex" do
     mutex = Mutex.new
     mutex.expects(:lock).once
