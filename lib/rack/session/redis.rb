@@ -53,7 +53,7 @@ module Rack
 
       def destroy_session(env, session_id, options)
         with_lock(env) do
-          with { |c| c.del(session_id) }
+          with { |c| c.unlink(session_id) }
           generate_sid unless options[:drop]
         end
       end
