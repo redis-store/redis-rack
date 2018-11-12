@@ -62,6 +62,17 @@ class Redis
         conn.pooled?.must_equal false
         conn.store.to_s.must_match(/127\.0\.0\.1:6380 against DB 1$/)
       end
+
+      it "does not include nil options for the connection pool" do
+        conn = Connection.new
+        conn.pool_options.must_be_empty
+
+        conn = Connection.new(pool_size: nil)
+        conn.pool_options.must_be_empty
+
+        conn = Connection.new(pool_timeout: nil)
+        conn.pool_options.must_be_empty
+      end
     end
   end
 end

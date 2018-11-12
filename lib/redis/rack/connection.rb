@@ -35,7 +35,7 @@ class Redis
         {
           size: @options[:pool_size],
           timeout: @options[:pool_timeout]
-        }
+        }.reject { |key, value| value.nil? }.to_h
       end
     end
   end
