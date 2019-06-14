@@ -24,7 +24,7 @@ module Rack
         loop do
           sid = generate_sid
           first = with do |c|
-            [*c.setnx(sid, session, @default_options)].first
+            [*c.setnx(sid, session)].first
           end
           break sid if [1, true].include?(first)
         end
