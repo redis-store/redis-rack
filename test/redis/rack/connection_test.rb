@@ -56,6 +56,12 @@ class Redis
         conn.store.must_equal(store)
       end
 
+      it "throws an error when provided Redis store is not the expected type" do
+        assert_raises ArgumentError do
+          Connection.new(redis_store: ::Redis.new)
+        end
+      end
+
       it "uses the specified Redis server when provided" do
         conn = Connection.new(redis_server: 'redis://127.0.0.1:6380/1')
 
