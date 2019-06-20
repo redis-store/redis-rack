@@ -9,6 +9,10 @@ class Redis
         if @pool && !@pool.is_a?(ConnectionPool)
           raise ArgumentError, "pool must be an instance of ConnectionPool"
         end
+
+        if @store && !@store.is_a?(Redis::Store)
+          raise ArgumentError, "redis_store must be an instance of Redis::Store (currently #{@store.class.name})"
+        end
       end
 
       def with(&block)
