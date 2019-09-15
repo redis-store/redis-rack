@@ -46,7 +46,7 @@ module Rack
 
       def set_session(env, session_id, new_session, options)
         with_lock(env, false) do
-          with { |c| c.set session_id, new_session, options }
+          with { |c| c.set session_id, new_session, ex: options[:expire_after] }
           session_id
         end
       end
