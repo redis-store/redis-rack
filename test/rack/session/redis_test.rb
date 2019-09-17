@@ -102,7 +102,9 @@ describe Rack::Session::Redis do
     sesion_store = Rack::Session::Redis.new(incrementor)
     sesion_store.instance_variable_set(:@mutex, mutex)
     was_yielded = false
-    sesion_store.with_lock({'rack.multithread' => true}) { was_yielded = true}
+    request = Minitest::Mock.new
+    request.expect(:multithread?, true)
+    sesion_store.with_lock(request) { was_yielded = true}
     was_yielded.must_equal(true)
   end
 
@@ -118,7 +120,9 @@ describe Rack::Session::Redis do
       sesion_store = Rack::Session::Redis.new(incrementor, :threadsafe => false)
       sesion_store.instance_variable_set(:@mutex, mutex)
       was_yielded = false
-      sesion_store.with_lock({'rack.multithread' => true}) { was_yielded = true}
+      request = Minitest::Mock.new
+      request.expect(:multithread?, true)
+      sesion_store.with_lock(request) { was_yielded = true}
       was_yielded.must_equal(true)
     end
   end
