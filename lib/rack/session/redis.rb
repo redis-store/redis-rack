@@ -5,10 +5,10 @@ require 'redis/rack/connection'
 
 module Rack
   module Session
-    class Redis < Abstract::ID
+    class Redis < Abstract::Persisted
       attr_reader :mutex
 
-      DEFAULT_OPTIONS = Abstract::ID::DEFAULT_OPTIONS.merge(
+      DEFAULT_OPTIONS = Abstract::Persisted::DEFAULT_OPTIONS.merge(
         :redis_server => 'redis://127.0.0.1:6379/0/rack:session'
       )
 
@@ -30,11 +30,11 @@ module Rack
         end
       end
 
-      def get_session(env, sid)
-        if env['rack.session.options'][:skip]
+      def find_session(req, sid)
+        if req.session.options[:skip]
           [generate_sid, {}]
         else
-          with_lock(env, [nil, {}]) do
+          with_lock(req, [nil, {}]) do
             unless sid and session = with { |c| c.get(sid) }
               session = {}
               sid = generate_unique_sid(session)
@@ -44,15 +44,15 @@ module Rack
         end
       end
 
-      def set_session(env, session_id, new_session, options)
-        with_lock(env, false) do
+      def write_session(req, session_id, new_session, options)
+        with_lock(req, false) do
           with { |c| c.set session_id, new_session, options }
           session_id
         end
       end
 
-      def destroy_session(env, session_id, options)
-        with_lock(env) do
+      def delete_session(req, session_id, options)
+        with_lock(req) do
           with { |c| c.del(session_id) }
           generate_sid unless options[:drop]
         end
@@ -62,8 +62,8 @@ module Rack
         @default_options.fetch(:threadsafe, true)
       end
 
-      def with_lock(env, default=nil)
-        @mutex.lock if env['rack.multithread'] && threadsafe?
+      def with_lock(req, default=nil)
+        @mutex.lock if req.multithread? && threadsafe?
         yield
       rescue Errno::ECONNREFUSED
         if $VERBOSE
