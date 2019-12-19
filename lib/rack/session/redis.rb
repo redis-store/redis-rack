@@ -8,7 +8,7 @@ module Rack
     class Redis < Abstract::PersistedSecure
       attr_reader :mutex
 
-      DEFAULT_OPTIONS = Abstract::PersistedSecure::DEFAULT_OPTIONS.merge(
+      DEFAULT_OPTIONS = Abstract::ID::DEFAULT_OPTIONS.merge(
         :redis_server => 'redis://127.0.0.1:6379/0/rack:session'
       )
 
@@ -35,7 +35,7 @@ module Rack
           [generate_sid, {}]
         else
           with_lock(req, [nil, {}]) do
-            unless sid and session = with { |c| get_session_with_fallback(c, sid) }
+            unless sid and session = get_session_with_fallback(sid)
               session = {}
               sid = generate_unique_sid(session)
             end
@@ -54,8 +54,8 @@ module Rack
       def delete_session(req, sid, options)
         with_lock(req) do
           with do |c|
-            c.del(sid.private_id)
             c.del(sid.public_id)
+            c.del(sid.private_id)
           end
           generate_sid unless options[:drop]
         end
@@ -84,8 +84,8 @@ module Rack
 
       private
 
-      def get_session_with_fallback(c, sid)
-        c.get(sid.private_id) || c.get(sid.public_id)
+      def get_session_with_fallback(sid)
+        with { |c| c.get(sid.private_id) || c.get(sid.public_id) }
       end
     end
   end
