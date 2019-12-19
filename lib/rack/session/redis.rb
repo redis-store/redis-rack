@@ -24,7 +24,7 @@ module Rack
         loop do
           sid = generate_sid
           first = with do |c|
-            [*c.setnx(sid, session, @default_options)].first
+            [*c.setnx(sid.private_id, session, @default_options)].first
           end
           break sid if [1, true].include?(first)
         end
@@ -81,6 +81,8 @@ module Rack
       def with(&block)
         @conn.with(&block)
       end
+
+      private
 
       def get_session_with_fallback(c, sid)
         c.get(sid.private_id) || c.get(sid.public_id)
