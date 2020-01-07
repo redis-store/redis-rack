@@ -45,10 +45,47 @@ module Rack
       end
 
       def write_session(req, session_id, new_session, options)
-        with_lock(req, false) do
-          with { |c| c.set session_id, new_session, options }
-          session_id
+        if threadsafe?
+          return transactional_write_session(req, session_id, new_session, options)
         end
+
+        with { |c| c.set session_id, new_session, options }
+        session_id
+      end
+
+      def transactional_write_session(req, session_id, new_session, options)
+        with { |c|
+          # changes = changeset (req.session.to_h || {}), new_session
+          # warn "Initial: #{ req.session.to_h }, Updates: #{ new_session },Changeset: #{changes}"
+          # return if changes.empty?
+
+          # Atomically read the old session and merge it with the new session
+          # Inspired by this: https://stackoverflow.com/a/11311126/7816
+          loop do
+            c.watch session_id
+            old_session = c.get(session_id) || {}
+
+            break if c.multi do |multi|
+              # Using Hash#merge to merge the old and new session is a naïve
+              # strategy which does not always produce the correct result.
+              #
+              # Specifically, if a different request removes a key from the
+              # session in the time between when this thread intially read
+              # the session writes it back, the deleted keys will be
+              # reintroduced. Solving this requires determining the intended
+              # changes (insertions/updates/deletions) and selectively applying
+              # them, when writing the session. To accomplish that, we must
+              # make a copy of the initial state of the session at the
+              # beginning of the request, which we can then later compare with
+              # the updated state.
+              #
+              # One might also consider doing a deep merge of the existing and
+              # the updated session.
+              multi.set session_id, old_session.merge(new_session), options
+            end
+          end
+        }
+        session_id
       end
 
       def delete_session(req, session_id, options)
