@@ -55,10 +55,6 @@ module Rack
 
       def transactional_write_session(req, session_id, new_session, options)
         with { |c|
-          # changes = changeset (req.session.to_h || {}), new_session
-          # warn "Initial: #{ req.session.to_h }, Updates: #{ new_session },Changeset: #{changes}"
-          # return if changes.empty?
-
           # Atomically read the old session and merge it with the new session
           # Inspired by this: https://stackoverflow.com/a/11311126/7816
           loop do
