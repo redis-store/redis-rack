@@ -66,14 +66,16 @@ module Rack
               # strategy which does not always produce the correct result.
               #
               # Specifically, if a different request removes a key from the
-              # session in the time between when this thread intially read
-              # the session writes it back, the deleted keys will be
-              # reintroduced. Solving this requires determining the intended
-              # changes (insertions/updates/deletions) and selectively applying
-              # them, when writing the session. To accomplish that, we must
-              # make a copy of the initial state of the session at the
-              # beginning of the request, which we can then later compare with
-              # the updated state.
+              # session in the time between when session was intially read
+              # by the current request and the time when it gets written back,
+              # the deleted keys will reappear.
+              #
+              # Solving this requires determining the intended changes
+              # (insertions/updates/deletions) and selectively applying them,
+              # when writing the session. To accomplish that, we must make a
+              # copy of the initial state of the session at the beginning of
+              # the request, which we can then later compare with the updated
+              # state.
               #
               # One might also consider doing a deep merge of the existing and
               # the updated session.
