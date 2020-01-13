@@ -12,8 +12,6 @@ Gem::Specification.new do |s|
   s.description = %q{Redis Store for Rack applications}
   s.license     = 'MIT'
 
-  s.rubyforge_project = 'redis-rack'
-
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.executables   = []
