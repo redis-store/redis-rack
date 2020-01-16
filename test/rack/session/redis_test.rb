@@ -93,7 +93,7 @@ describe Rack::Session::Redis do
   it "does not store a blank session" do
     session_store = Rack::Session::Redis.new(incrementor)
     sid = session_store.generate_unique_sid({})
-    session_store.with { |c| c.get(sid).must_be_nil }
+    session_store.with { |c| c.get(sid.private_id).must_be_nil }
   end
 
   it "locks the store mutex" do
@@ -299,10 +299,11 @@ describe Rack::Session::Redis do
 
       res0 = req.get("/")
       session_id = (cookie = res0["Set-Cookie"])[session_match, 1]
-      ses0 = pool.with { |c| c.get(session_id) }
+      sid = Rack::Session::SessionId.new(session_id)
+      ses0 = pool.with { |c| c.get(sid.private_id) }
 
       req.get("/", "HTTP_COOKIE" => cookie)
-      ses1 = pool.with { |c| c.get(session_id) }
+      ses1 = pool.with { |c| c.get(sid.private_id) }
 
       ses1.wont_equal(ses0)
     end
@@ -323,6 +324,7 @@ describe Rack::Session::Redis do
       res.body.must_equal('{"counter"=>1}')
       cookie = res["Set-Cookie"]
       session_id = cookie[session_match, 1]
+      sid = Rack::Session::SessionId.new(session_id)
 
       delta_incrementor = lambda do |env|
         # emulate disconjoinment of threading
@@ -344,7 +346,7 @@ describe Rack::Session::Redis do
         request.body.must_include('"counter"=>2')
       end
 
-      session = pool.with { |c| c.get(session_id) }
+      session = pool.with { |c| c.get(sid.private_id) }
       session.size.must_equal(tnum+1) # counter
       session['counter'].must_equal(2) # meeeh
 
@@ -361,7 +363,7 @@ describe Rack::Session::Redis do
         request.body.must_include('"counter"=>3')
       end
 
-      session = pool.with { |c| c.get(session_id) }
+      session = pool.with { |c| c.get(sid.private_id) }
       session.size.must_equal(tnum+1)
       session['counter'].must_equal(3)
 
@@ -383,7 +385,7 @@ describe Rack::Session::Redis do
         request.body.must_include('"foo"=>"bar"')
       end
 
-      session = pool.with { |c| c.get(session_id) }
+      session = pool.with { |c| c.get(sid.private_id) }
       session.size.must_equal(r.size+1)
       session['counter'].must_be_nil
       session['foo'].must_equal('bar')
