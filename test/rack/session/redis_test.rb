@@ -418,7 +418,9 @@ describe Rack::Session::Redis do
       req = Rack::MockRequest.new(pool)
       res = req.get('/?process=0')
       cookie = res["Set-Cookie"]
-      sid = cookie[session_match, 1]
+      session_id = cookie[session_match, 1]
+      sid = Rack::Session::SessionId.new(session_id)
+
 
       # Process 1 is first to make a request, but last to receive a response
       # This is to ensure that it reads the session *before* process 2 has made changes to it,
@@ -438,7 +440,7 @@ describe Rack::Session::Redis do
 
       Process.waitall
 
-      session = pool.with { |c| c.get(sid) }
+      session = pool.with { |c| c.get(sid.private_id) }
       session['proc1'].must_equal(true)
       session['proc2'].must_equal(true)
     end

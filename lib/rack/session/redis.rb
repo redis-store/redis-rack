@@ -44,22 +44,22 @@ module Rack
         end
       end
 
-      def write_session(req, session_id, new_session, options)
+      def write_session(req, sid, new_session, options)
         if threadsafe?
-          return transactional_write_session(req, session_id, new_session, options)
+          return transactional_write_session(req, sid, new_session, options)
         end
 
-        with { |c| c.set session_id, new_session, options }
-        session_id
+        with { |c| c.set sid.private_id, new_session, options }
+        sid
       end
 
-      def transactional_write_session(req, session_id, new_session, options)
+      def transactional_write_session(req, sid, new_session, options)
         with { |c|
           # Atomically read the old session and merge it with the new session
           # Inspired by this: https://stackoverflow.com/a/11311126/7816
           loop do
-            c.watch session_id
-            old_session = c.get(session_id) || {}
+            c.watch sid.private_id
+            old_session = c.get(sid.private_id) || {}
 
             break if c.multi do |multi|
               # Using Hash#merge to merge the old and new session is a naïve
@@ -79,11 +79,11 @@ module Rack
               #
               # One might also consider doing a deep merge of the existing and
               # the updated session.
-              multi.set session_id, old_session.merge(new_session), options
+              multi.set sid.private_id, old_session.merge(new_session), options
             end
           end
         }
-        session_id
+        sid
       end
 
       def delete_session(req, sid, options)
