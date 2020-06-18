@@ -1,5 +1,4 @@
 language: ruby
-script: bundle exec rake
 rvm:
   - 2.2
   - 2.3
@@ -9,10 +8,16 @@ rvm:
   - 2.7
   - ruby-head
   - jruby-head
+gemfile:
+  - gemfiles/redis_4.1.gemfile
+  - gemfiles/redis_4.2.gemfile
 matrix:
   allow_failures:
   - rvm: jruby-head
   - rvm: ruby-head
+  exclude:
+  - rvm: 2.2
+    gemfile: gemfiles/redis_4.2.gemfile
 deploy:
   provider: rubygems
   api_key:

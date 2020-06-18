@@ -11,6 +11,7 @@ module Rack
       DEFAULT_OPTIONS = Abstract::ID::DEFAULT_OPTIONS.merge(
         :redis_server => 'redis://127.0.0.1:6379/0/rack:session'
       )
+      ALLOWED_SET_OPTIONS = [:ex, :px, :nx, :xx, :keepttl, :expire_after, :expires_in]
 
       def initialize(app, options = {})
         super
@@ -45,6 +46,9 @@ module Rack
       end
 
       def write_session(req, sid, new_session, options)
+        options = options
+          .select { |k, v| ALLOWED_SET_OPTIONS.include?(k) && !v.nil? }
+
         with_lock(req, false) do
           with { |c| c.set sid.private_id, new_session, options }
           sid
