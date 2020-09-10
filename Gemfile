@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 source 'https://rubygems.org'
 gemspec
 gem 'redis-store-testing', github: 'redis-store/testing'

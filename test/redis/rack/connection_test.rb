@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'test_helper'
 require 'connection_pool'
 require 'redis/rack/connection'
