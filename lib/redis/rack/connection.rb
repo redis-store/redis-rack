@@ -1,6 +1,8 @@
 class Redis
   module Rack
     class Connection
+      POOL_KEYS = %i[pool pool_size pool_timeout].freeze
+
       def initialize(options = {})
         @options = options
         @store = options[:redis_store]
@@ -24,7 +26,9 @@ class Redis
       end
 
       def pooled?
-        [:pool, :pool_size, :pool_timeout].any? { |key| @options.key?(key) }
+        return @pooled if defined?(@pooled)
+
+        @pooled = POOL_KEYS.any? { |key| @options.key?(key) }
       end
 
       def pool
