@@ -8,7 +8,7 @@ See the main [redis-store readme] for general guidelines.
 as a backend store for the `Rack::Cache` HTTP cache. All this gem does
 is store the Rack session within Redis.
 
-[![Build Status](https://secure.travis-ci.org/redis-store/redis-rack.png?branch=master)](http://travis-ci.org/redis-store/redis-rack?branch=master)
+[![Build Status](https://github.com/redis-store/redis-rack/actions/workflows/ruby.yml/badge.svg?branch=master)](https://github.com/redis-store/redis-rack/actions/workflows/ruby.yml?query=branch%3Amaster)
 [![Code Climate](https://codeclimate.com/github/redis-store/redis-store.png)](https://codeclimate.com/github/redis-store/redis-rack)
 [![Gem Version](https://badge.fury.io/rb/redis-rack.png)](http://badge.fury.io/rb/redis-rack)
 
