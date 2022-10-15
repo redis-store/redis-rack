@@ -66,7 +66,7 @@ module Rack
       end
 
       def with_lock(req, default = nil)
-        @mutex.lock if req.multithread? && threadsafe?
+        @mutex.lock if threadsafe?
         yield
       rescue Errno::ECONNREFUSED
         if $VERBOSE
