@@ -32,11 +32,11 @@ class Redis
       end
 
       def pool
-        @pool ||= ConnectionPool.new(pool_options) { store } if pooled?
+        @pool ||= ConnectionPool.new(pool_options) { build_store } if pooled?
       end
 
       def store
-        @store ||= Redis::Store::Factory.create(@options[:redis_server])
+        @store ||= build_store
       end
 
       def pool_options
@@ -44,6 +44,12 @@ class Redis
           size: @options[:pool_size],
           timeout: @options[:pool_timeout]
         }.reject { |key, value| value.nil? }.to_h
+      end
+
+      private
+
+      def build_store
+        Redis::Store::Factory.create(@options[:redis_server])
       end
     end
   end
