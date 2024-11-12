@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-$:.push File.expand_path('../lib', __FILE__)
-require 'redis/rack/version'
+
+require_relative 'lib/redis/rack/version'
 
 Gem::Specification.new do |s|
   s.name        = 'redis-rack'
@@ -12,11 +12,8 @@ Gem::Specification.new do |s|
   s.description = %q{Redis Store for Rack applications}
   s.license     = 'MIT'
 
-  s.files         = `git ls-files`.split("\n")
-  s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
-  s.executables   = []
-  s.require_paths = ["lib"]
+  s.files = `git ls-files`.split("\n")
 
-  s.add_runtime_dependency 'redis-store',   ['< 2', '>= 1.2']
-  s.add_runtime_dependency 'rack-session',  '>= 0.2.0'
+  s.add_dependency 'redis-store',   ['< 2', '>= 1.2']
+  s.add_dependency 'rack-session',  '>= 0.2.0'
 end
