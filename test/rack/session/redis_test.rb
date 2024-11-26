@@ -28,6 +28,31 @@ describe Rack::Session::Redis do
     incrementor.call(env)
   end
 
+  let(:counter1) do
+    if RUBY_VERSION >= '3.4'
+      '{"counter" => 1}'
+    else
+      '{"counter"=>1}'
+    end
+  end
+
+  let(:counter2) do
+    if RUBY_VERSION >= '3.4'
+      '{"counter" => 2}'
+    else
+      '{"counter"=>2}'
+    end
+  end
+
+  let(:counter3) do
+    if RUBY_VERSION >= '3.4'
+      '{"counter" => 3}'
+    else
+      '{"counter"=>3}'
+    end
+  end
+
+
   # # test Redis connection
   # Rack::Session::Redis.new(incrementor)
   #
@@ -131,7 +156,7 @@ describe Rack::Session::Redis do
     with_pool_management(incrementor) do |pool|
       res = Rack::MockRequest.new(pool).get("/")
       res["Set-Cookie"].must_include("#{session_key}=")
-      res.body.must_equal('{"counter"=>1}')
+      res.body.must_equal(counter1)
     end
   end
 
@@ -141,9 +166,9 @@ describe Rack::Session::Redis do
       res = req.get("/")
       cookie = res["Set-Cookie"]
       req.get("/", "HTTP_COOKIE" => cookie).
-        body.must_equal('{"counter"=>2}')
+        body.must_equal(counter2)
       req.get("/", "HTTP_COOKIE" => cookie).
-        body.must_equal('{"counter"=>3}')
+        body.must_equal(counter3)
     end
   end
 
@@ -153,9 +178,9 @@ describe Rack::Session::Redis do
       res = req.get("/")
       sid = res["Set-Cookie"][session_match, 1]
       req.get("/?rack.session=#{sid}").
-        body.must_equal('{"counter"=>1}')
+        body.must_equal(counter1)
       req.get("/?rack.session=#{sid}").
-        body.must_equal('{"counter"=>1}')
+        body.must_equal(counter1)
     end
   end
 
@@ -165,9 +190,9 @@ describe Rack::Session::Redis do
       res = req.get("/")
       sid = res["Set-Cookie"][session_match, 1]
       req.get("/?rack.session=#{sid}").
-        body.must_equal('{"counter"=>2}')
+        body.must_equal(counter2)
       req.get("/?rack.session=#{sid}").
-        body.must_equal('{"counter"=>3}')
+        body.must_equal(counter3)
     end
   end
 
@@ -176,7 +201,7 @@ describe Rack::Session::Redis do
     with_pool_management(incrementor) do |pool|
       res = Rack::MockRequest.new(pool).
         get("/", "HTTP_COOKIE" => bad_cookie)
-      res.body.must_equal('{"counter"=>1}')
+      res.body.must_equal(counter1)
       cookie = res["Set-Cookie"][session_match]
       cookie.wont_match(/#{bad_cookie}/)
     end
@@ -185,17 +210,17 @@ describe Rack::Session::Redis do
   it "maintains freshness" do
     with_pool_management(incrementor, :expire_after => 3) do |pool|
       res = Rack::MockRequest.new(pool).get('/')
-      res.body.must_include('"counter"=>1')
+      res.body.must_include(counter1)
       cookie = res["Set-Cookie"]
       sid = cookie[session_match, 1]
       res = Rack::MockRequest.new(pool).get('/', "HTTP_COOKIE" => cookie)
       res["Set-Cookie"][session_match, 1].must_equal(sid)
-      res.body.must_include('"counter"=>2')
+      res.body.must_include(counter2)
       puts 'Sleeping to expire session' if $DEBUG
       sleep 4
       res = Rack::MockRequest.new(pool).get('/', "HTTP_COOKIE" => cookie)
       res["Set-Cookie"][session_match, 1].wont_equal(sid)
-      res.body.must_include('"counter"=>1')
+      res.body.must_include(counter1)
     end
   end
 
@@ -205,15 +230,15 @@ describe Rack::Session::Redis do
 
       res0 = req.get("/")
       cookie = res0["Set-Cookie"]
-      res0.body.must_equal('{"counter"=>1}')
+      res0.body.must_equal(counter1)
 
       res1 = req.get("/", "HTTP_COOKIE" => cookie)
       res1["Set-Cookie"].must_be_nil
-      res1.body.must_equal('{"counter"=>2}')
+      res1.body.must_equal(counter2)
 
       res2 = req.get("/", "HTTP_COOKIE" => cookie)
       res2["Set-Cookie"].must_be_nil
-      res2.body.must_equal('{"counter"=>3}')
+      res2.body.must_equal(counter3)
     end
   end
 
@@ -225,15 +250,15 @@ describe Rack::Session::Redis do
 
       res1 = req.get("/")
       session = (cookie = res1["Set-Cookie"])[session_match]
-      res1.body.must_equal('{"counter"=>1}')
+      res1.body.must_equal(counter1)
 
       res2 = dreq.get("/", "HTTP_COOKIE" => cookie)
       res2["Set-Cookie"].must_be_nil
-      res2.body.must_equal('{"counter"=>2}')
+      res2.body.must_equal(counter2)
 
       res3 = req.get("/", "HTTP_COOKIE" => cookie)
       res3["Set-Cookie"][session_match].wont_equal(session)
-      res3.body.must_equal('{"counter"=>1}')
+      res3.body.must_equal(counter1)
     end
   end
 
@@ -245,20 +270,20 @@ describe Rack::Session::Redis do
 
       res1 = req.get("/")
       session = (cookie = res1["Set-Cookie"])[session_match]
-      res1.body.must_equal('{"counter"=>1}')
+      res1.body.must_equal(counter1)
 
       res2 = rreq.get("/", "HTTP_COOKIE" => cookie)
       new_cookie = res2["Set-Cookie"]
       new_session = new_cookie[session_match]
       new_session.wont_equal(session)
-      res2.body.must_equal('{"counter"=>2}')
+      res2.body.must_equal(counter2)
 
       res3 = req.get("/", "HTTP_COOKIE" => new_cookie)
-      res3.body.must_equal('{"counter"=>3}')
+      res3.body.must_equal(counter3)
 
       # Old cookie was deleted
       res4 = req.get("/", "HTTP_COOKIE" => cookie)
-      res4.body.must_equal('{"counter"=>1}')
+      res4.body.must_equal(counter1)
     end
   end
 
@@ -269,7 +294,7 @@ describe Rack::Session::Redis do
 
       res0 = dreq.get("/")
       res0["Set-Cookie"].must_be_nil
-      res0.body.must_equal('{"counter"=>1}')
+      res0.body.must_equal(counter1)
     end
   end
 
@@ -279,7 +304,7 @@ describe Rack::Session::Redis do
       sreq = Rack::MockRequest.new(skip)
 
       res0 = sreq.get("/")
-      res0.body.must_equal('{"counter"=>1}')
+      res0.body.must_equal(counter1)
     end
   end
 
@@ -320,7 +345,7 @@ describe Rack::Session::Redis do
       req = Rack::MockRequest.new(pool)
 
       res = req.get('/')
-      res.body.must_equal('{"counter"=>1}')
+      res.body.must_equal(counter1)
       cookie = res["Set-Cookie"]
       session_id = cookie[session_match, 1]
       sid = Rack::Session::SessionId.new(session_id)
@@ -342,7 +367,7 @@ describe Rack::Session::Redis do
       end.reverse.map{|t| t.run.join.value }
       r.each do |request|
         request['Set-Cookie'].must_equal(cookie)
-        request.body.must_include('"counter"=>2')
+        request.body.must_include(counter2)
       end
 
       session = pool.with { |c| c.get(sid.private_id) }

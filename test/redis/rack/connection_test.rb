@@ -25,7 +25,7 @@ class Redis
         conn.pooled?.must_equal true
 
         conn.with do |connection|
-          connection.to_s.must_match(/127\.0\.0\.1:6379 against DB 0$/)
+          connection.to_s.must_match(/localhost:6379 against DB 0$/)
         end
       end
 
