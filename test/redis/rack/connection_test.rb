@@ -37,6 +37,32 @@ class Redis
         end
       end
 
+      it "can establish a new connection pool with the provided Redis server" do
+        pool_size = 5
+        conn = Connection.new(redis_server: 'redis://127.0.0.1:6380/1', pool_size: pool_size)
+
+        clients = []
+        mutex = Mutex.new
+        threads = Array.new(pool_size) do |i|
+          Thread.new do
+            conn.with do |connection|
+              mutex.synchronize do
+                clients[i] = connection
+              end
+
+              # Wait for all clients to be established
+              loop do
+                break if clients.size == pool_size && clients.all?
+                sleep(0.01)
+              end
+            end
+          end
+        end.each(&:join)
+
+        conn.pooled?.must_equal true
+        clients.map(&:object_id).uniq.size.must_equal pool_size
+      end
+
       it "can use a supplied pool" do
         pool = ConnectionPool.new size: 1, timeout: 1 do
           ::Redis::Store::Factory.create('redis://127.0.0.1:6380/1')
